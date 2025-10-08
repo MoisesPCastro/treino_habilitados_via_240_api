@@ -1,0 +1,1 @@
+export type typeStatus = 'pendente' | 'parcial' | 'quitado';
