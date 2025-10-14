@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { AulaService } from './aula.service';
 import { CreateAulaDto } from './dto/create-aula.dto';
 import { UpdateAulaDto } from './dto/update-aula.dto';
+import { CreateAulasEmLoteDto } from './dto/create-aulas-lote.dto';
 
 @Controller('aulas')
 export class AulaController {
@@ -9,9 +10,13 @@ export class AulaController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createAulaDto: CreateAulaDto) {
-    return this.aulaService.create(createAulaDto);
+  async create(@Body() body: CreateAulaDto | CreateAulaDto[]) {
+    if (Array.isArray(body)) {
+      return this.aulaService.createMany(body)
+    }
+    return this.aulaService.create(body)
   }
+
 
   @Get('hoje')
   async listarAulasDeHoje() {
@@ -19,9 +24,14 @@ export class AulaController {
   }
 
   @Get()
-  findAll() {
-    return this.aulaService.findAll();
+  findAll(
+    @Query('nome') nome?: string,
+    @Query('data') data?: string,
+    @Query('cpf') cpf?: string,
+  ) {
+    return this.aulaService.findAll({ nome, data, cpf })
   }
+
 
   @Get(':id')
   findOne(@Param('id') id: string) {

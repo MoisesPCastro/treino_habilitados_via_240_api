@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common'
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateAulaDto } from './dto/create-aula.dto'
 import { UpdateAulaDto } from './dto/update-aula.dto'
 
 import { Aula } from '@prisma/client'
 import { MessageEnum } from '../common/enums/message.enum'
+import { IResponseCreated } from './interfeces'
 
 @Injectable()
 export class AulaService {
@@ -47,14 +48,88 @@ export class AulaService {
     }
   }
 
-  async findAll(): Promise<Aula[]> {
+  async createMany(aulas: CreateAulaDto[]): Promise<IResponseCreated> {
+    try {
+      if (!Array.isArray(aulas) || aulas.length === 0) {
+        throw new BadRequestException('Nenhuma aula enviada.')
+      }
+
+      const primeiroAlunoId = aulas[0].alunoId
+
+      const aluno = await this.prisma.aluno.findUnique({
+        where: { id: primeiroAlunoId },
+      })
+
+      if (!aluno) {
+        throw new NotFoundException('Aluno não encontrado')
+      }
+
+      const aulasProntas = aulas.map((aula) => {
+        const dataCompleta = new Date(`${aula.data}T${aula.hora}:00Z`)
+        return {
+          alunoId: aula.alunoId,
+          data: dataCompleta,
+          hora: aula.hora,
+          duracao: aula.duracao ?? 50,
+          status: aula.status,
+          paga: aula.paga,
+          observacoes: aula.observacoes ?? '',
+        }
+      })
+
+      await this.prisma.aula.createMany({
+        data: aulasProntas,
+      })
+
+      return { message: MessageEnum.CREATED, data: aulasProntas }
+    } catch (error) {
+      console.error('❌ Erro ao criar múltiplas aulas:', error)
+      throw new InternalServerErrorException('Erro ao criar múltiplas aulas')
+    }
+  }
+
+
+  async findAll(filters?: { nome?: string; data?: string, cpf?: string }): Promise<Aula[]> {
+    const where: any = {}
+
+    if (filters?.nome) {
+      where.aluno = {
+        nome: { contains: filters.nome },
+      }
+    }
+
+    if (filters?.cpf) {
+      where.aluno = {
+        cpf: { contains: filters.cpf },
+      }
+    }
+
+
+    if (filters?.data) {
+      const parsedDate = new Date(filters.data)
+      if (!isNaN(parsedDate.getTime())) {
+        const start = new Date(parsedDate)
+        start.setHours(0, 0, 0, 0)
+
+        const end = new Date(parsedDate)
+        end.setHours(23, 59, 59, 999)
+
+        where.data = {
+          gte: start,
+          lte: end,
+        }
+      }
+    }
+
     return this.prisma.aula.findMany({
+      where,
       include: {
         aluno: {
-          select: { nome: true, categoriaCnh: true },
+          select: { nome: true, categoriaCnh: true, cpf: true },
         },
       },
       orderBy: { data: 'desc' },
+      take: 20,
     })
   }
 

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsBoolean, Min, MaxLength, IsEmail } from 'class-validator'
+import { IsString, IsOptional, IsInt, IsBoolean, Min, MaxLength, IsEmail, Matches } from 'class-validator'
 
 export class CreateAlunoDto {
   @IsString()
@@ -10,6 +10,16 @@ export class CreateAlunoDto {
 
   @IsString()
   telefone!: string
+
+  @IsString()
+  cpf!: string
+
+  @IsString()
+  endereco!: string
+
+  @IsOptional()
+  @IsString()
+  numeroCarteiraHabilitacao?: string
 
   @IsOptional()
   @IsEmail()

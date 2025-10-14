@@ -8,6 +8,6 @@ export class AuthController {
   @Post()
   async login(@Body('senha') senha: string) {
     await this.service.validarSenha(senha)
-    return { message: 'Acesso permitido' }
+    return { message: 'Acesso permitido', token: process.env.API_TOKEN }
   }
 }

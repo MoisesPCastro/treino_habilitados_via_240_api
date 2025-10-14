@@ -23,6 +23,8 @@ export class PagamentoService {
           valorTotal: createPagamentoDto.valorTotal,
           valorPago: createPagamentoDto.valorPago,
           dataVencimento: new Date(createPagamentoDto.dataVencimento),
+          dataValorPago: createPagamentoDto.dataValorPago ? new Date(createPagamentoDto.dataValorPago) : null,
+          tipoPagamento: createPagamentoDto.tipoPagamento,
           status: createPagamentoDto.status,
         },
       })
@@ -81,9 +83,18 @@ export class PagamentoService {
     const pagamentoExistente = await this.prisma.pagamento.findUnique({ where: { id } })
     if (!pagamentoExistente) throw new NotFoundException(`Pagamento ${id} não encontrado`)
 
+    const dataVencimento =
+      updatePagamentoDto.dataVencimento &&
+        !isNaN(Date.parse(updatePagamentoDto.dataVencimento.toString()))
+        ? new Date(updatePagamentoDto.dataVencimento)
+        : undefined
+
     await this.prisma.pagamento.update({
       where: { id },
-      data: updatePagamentoDto,
+      data: {
+        ...updatePagamentoDto,
+        ...(dataVencimento ? { dataVencimento } : {}),
+      },
     })
 
     return MessageEnum.UPDATED

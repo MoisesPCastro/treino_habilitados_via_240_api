@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common'
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Query } from '@nestjs/common'
 import { AlunoService } from './aluno.service'
 import { CreateAlunoDto } from './dto/create-aluno.dto'
 import { UpdateAlunoDto } from './dto/update-aluno.dto'
@@ -14,14 +14,23 @@ export class AlunoController {
   }
 
   @Get()
-  findAll() {
-    return this.alunoService.findAll()
+  findAll(
+    @Query('nome') nome?: string,
+    @Query('cpf') cpf?: string,
+  ) {
+    return this.alunoService.findAll({ nome, cpf })
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.alunoService.findOne(id)
   }
+
+  @Get(':id/detalhes')
+  async getDetalhes(@Param('id') id: string) {
+    return this.alunoService.getDetalhes(id);
+  }
+
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAlunoDto: UpdateAlunoDto) {
