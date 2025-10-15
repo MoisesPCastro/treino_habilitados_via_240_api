@@ -125,7 +125,7 @@ export class AulaService {
       where,
       include: {
         aluno: {
-          select: { nome: true, categoriaCnh: true, cpf: true },
+          select: { nome: true, categoriaCnh: true, cpf: true, telefone:true },
         },
       },
       orderBy: { data: 'desc' },
@@ -147,17 +147,34 @@ export class AulaService {
     return aula
   }
 
-  async update(id: string, updateAulaDto: UpdateAulaDto): Promise<MessageEnum> {
+  // aula.service.ts
+  async update(id: string, updateAulaDto: any): Promise<MessageEnum> {
     const aulaExistente = await this.prisma.aula.findUnique({ where: { id } })
     if (!aulaExistente) throw new NotFoundException(`Aula com id ${id} não encontrada`)
 
+    const dataToUpdate: any = { ...updateAulaDto }
+
+    if (updateAulaDto?.data) {
+      if (typeof updateAulaDto.data === 'string') {
+        // suporta 'YYYY-MM-DD' e ISO completo
+        if (/^\d{4}-\d{2}-\d{2}$/.test(updateAulaDto.data)) {
+          // evite o 'Z' se quiser preservar o dia na timezone local:
+          dataToUpdate.data = new Date(`${updateAulaDto.data}T00:00:00`)
+        } else {
+          dataToUpdate.data = new Date(updateAulaDto.data) // tenta parsear ISO
+        }
+      }
+      // se já vier Date, segue direto
+    }
+
     await this.prisma.aula.update({
       where: { id },
-      data: updateAulaDto,
+      data: dataToUpdate,
     })
 
     return MessageEnum.UPDATED
   }
+
 
   async remove(id: string): Promise<MessageEnum> {
     const aulaExistente = await this.prisma.aula.findUnique({ where: { id } })

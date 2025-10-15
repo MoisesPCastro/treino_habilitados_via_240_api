@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common'
 import { PagamentoService } from './pagamento.service'
 import { CreatePagamentoDto } from './dto/create-pagamento.dto'
@@ -23,10 +24,14 @@ export class PagamentoController {
   async create(@Body() createPagamentoDto: CreatePagamentoDto) {
     return this.pagamentoService.create(createPagamentoDto)
   }
-
+  
   @Get()
-  async findAll() {
-    return this.pagamentoService.findAll()
+  async findAll(
+    @Query('nome') nome?: string,
+    @Query('cpf') cpf?: string,
+    @Query('dataVencimento') dataVencimento?: string,
+  ) {
+    return this.pagamentoService.findAll({ nome, cpf, dataVencimento })
   }
 
   @Get(':id')

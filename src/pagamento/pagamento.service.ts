@@ -36,14 +36,59 @@ export class PagamentoService {
     }
   }
 
-  async findAll() {
+  async findAll(filters?: { nome?: string; cpf?: string; dataVencimento?: string }) {
+    const where: any = {}
+
+    // 🔍 Filtro por nome do aluno
+    if (filters?.nome) {
+      where.aluno = {
+        nome: { contains: filters.nome },
+      }
+    }
+
+    // 🔍 Filtro por CPF
+    if (filters?.cpf) {
+      where.aluno = {
+        ...where.aluno,
+        cpf: { contains: filters.cpf },
+      }
+    }
+
+    // 📅 Filtro por data de vencimento (formato brasileiro ou ISO)
+    if (filters?.dataVencimento) {
+      let parsedDate: Date | null = null
+
+      // DD/MM/YYYY → converte
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(filters.dataVencimento)) {
+        const [dia, mes, ano] = filters.dataVencimento.split('/')
+        parsedDate = new Date(`${ano}-${mes}-${dia}`)
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(filters.dataVencimento)) {
+        parsedDate = new Date(filters.dataVencimento)
+      }
+
+      if (parsedDate && !isNaN(parsedDate.getTime())) {
+        const start = new Date(parsedDate)
+        start.setHours(0, 0, 0, 0)
+
+        const end = new Date(parsedDate)
+        end.setHours(23, 59, 59, 999)
+
+        where.dataVencimento = {
+          gte: start,
+          lte: end,
+        }
+      }
+    }
+
     return this.prisma.pagamento.findMany({
+      where,
       include: {
         aluno: {
-          select: { nome: true, categoriaCnh: true, telefone: true },
+          select: { nome: true, categoriaCnh: true, telefone: true, cpf: true },
         },
       },
       orderBy: { dataVencimento: 'desc' },
+      take: 20,
     })
   }
 
